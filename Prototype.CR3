@@ -1,29 +1,39 @@
 ' === Declarations ===
-Public V_Pressure As Float     ' pressure sensor reading
+Public V_Pressure As Float     ' single-ended mV reading from VoltSE
 Public Pressure_psi As Float   ' Converted pressure
 Public T1 As Long                 ' Scan counter inside states
 Public State As String * 10    ' State machine
-Public ScanCounter As Long        ' Scan counter
-Dim StopNow As Boolean         ' Set when C8 trips
+Public ScanCounter As Long        ' Start-up delay counter
+'Dim StopNow As Boolean         ' Set when C8 trips
 Dim PortInput As Long          ' Destination for PortGet (digital read on C8)
+
+'=== silly derivative thing ===
+Public PrevPressure As Float
+Public Deriv As Float
+Public DerivSm As Float
+Public DerivStreak As Long
+Const DERIV_THRESH = 0.2           ' psi/sec threshold (tune this)
+Const DERIV_COUNT_REQ = 10           ' consecutive smoothed-deriv checks required
+Const ALPHA = 0.35
 
 ' === Constants ===
 Const PRESSURE_THRESHOLD = 41.0   ' pump maxes out around here
-Const TIMEOUT_SCANS = 360            ' e.g. 6 min at 10s scans = 36
+Const TIMEOUT_SCANS = 360            ' e.g. 6 min at 10s scans = 360
 Const STARTUP_DELAY_SCANS = 10     ' 10s at 1s scan rate
 Const SCAN_INTERVAL_SECS = 1
 
 ' === Data Table ===
 DataTable(SampleLog, True, -1)
   DataInterval(0, SCAN_INTERVAL_SECS, Sec, 1)
-  Sample(1, V_Pressure, FP2)     ' logged in mV
+  Sample(1, V_Pressure, FP2)     ' logged in mV (or convert to V if you prefer)
   Sample(1, Pressure_psi, FP2)
   Sample(1, State, String)
-  Sample(1, StopNow, Boolean)    ' log the stop event (will show with timestamp)
+ ' Sample(1, StopNow, Boolean)    ' log the stop event (will show with timestamp)
 EndTable
 
 ' === Pressure Conversion Function ===
 Function VoltageToPSI(V As Float) As Float
+  ' V is in volts (convert if you log mV)
   If V <= 1.0 Then
     VoltageToPSI = 0
   ElseIf V >= 5.0 Then
@@ -35,12 +45,18 @@ EndFunction
 
 ' === Main Program ===
 BeginProg
+  ' initialize variables
   State = "WAIT"
   ScanCounter = 0
   T1 = 0
-  StopNow = False
+  'StopNow = False
   PortInput = 0
 
+  ' silly derivative thing
+  PrevPressure = 0
+  Deriv = 0
+  DerivSm = 0
+  DerivStreak = 0
   ' Main scan loop: runs every SCAN_INTERVAL_SECS
   Scan(SCAN_INTERVAL_SECS, Sec, 0, 0)
 
@@ -55,27 +71,44 @@ BeginProg
       If ScanCounter >= STARTUP_DELAY_SCANS Then
         State = "SAMPLE"
         T1 = 0
-        StopNow = False
+        'StopNow = False
       EndIf
+      
+  ElseIf State = "SAMPLE" Then
+    ' ==== actuate pump then valve (active-low relays) ====
+    PortSet(2, 0)   ' Pump ON (C2: 0 = on)
+    If T1 >= 1 Then
+      PortSet(1, 0) ' Valve OPEN (C1)
+    EndIf
 
-    ElseIf State = "SAMPLE" Then
-      ' checks if hardware interrupt is true
-      PortGet(PortInput, 8)   
-      If PortInput = 1 Then
-        StopNow = True
+    ' === compute derivative (psi/sec) ===
+    ' PrevPressure holds the previous-pressure in psi
+    If T1 = 0 Then
+      ' first sample in state: initialize
+      PrevPressure = Pressure_psi
+      Deriv = 0
+      DerivSm = 0
+      DerivStreak = 0
+    Else
+      Deriv = (Pressure_psi - PrevPressure) / SCAN_INTERVAL_SECS   ' psi/sec
+      ' Exponential moving average smoothing (alpha = 0.3)
+      DerivSm = (ALPHA * Deriv) + ((1-ALPHA) * DerivSm)
+      ' Check absolute of smoothed derivative
+      If ABS(DerivSm) <= DERIV_THRESH Then
+        DerivStreak = DerivStreak + 1
+      Else
+        DerivStreak = 0
       EndIf
+      PrevPressure = Pressure_psi
+    EndIf
+  T1 = T1 + 1
 
-      ' Start pump and then valve (pump first; valve after 1 scan)
-      PortSet(2, 0)   ' Pump ON (C2)
-      If T1 >= 1 Then
-        PortSet(1, 0)   ' Valve OPEN (C1)
-      EndIf
-
+  ' Stop if derivative stable or timeout or hardware trip
+    If (DerivStreak >= DERIV_COUNT_REQ) Then
+      State = "SHUTDOWN"
+      T1 = 0
+    EndIf
       T1 = T1 + 1
-      If (Pressure_psi >= PRESSURE_THRESHOLD) OR (T1 >= TIMEOUT_SCANS) OR StopNow Then
-        State = "SHUTDOWN"
-        T1 = 0
-      EndIf
 
     ElseIf State = "SHUTDOWN" Then
       ' Close valve first, then turn off pump after a delay
@@ -89,7 +122,7 @@ BeginProg
     ElseIf State = "DONE" Then
       PortSet(1, 1)
       PortSet(2, 1)
-      ' System idle - add code to reset later... building manifold takes precedence
+      ' System idle - you can add code to reset State= "WAIT" if you want cycles
     EndIf
 
     ' === Logging ===
