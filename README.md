@@ -26,17 +26,19 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
 -  A purge function will be implemented later, but we don't have a vent right now, so they will open at the same time.
 - Both the pump and valve (only one is being used right now) are using songle relays for activation. The valve is on C1 and the pump is on C2 of the CR3000
   
-### read pressure sensor
+### read pressure sensor and thermocouple
+- The CR3000 is using a 1s scan rate
 - The pressure sensor covers a range of 0 to 145 psig. The recorded pressure is then converted to a voltage between 1 and 4 V, so a function should be created for pressure readout such that:
   
-$y = \frac{145}{4}(x-1)$,
+$$ y = \frac{145}{4}(x-1) $$
 
 where $y$ is the pressure and $x$ is the output voltage. The output is read through the campell's first analog channel.
 
+- I would also like to read the differential output of the thermocouple, and log the dew point and lowest temperature it reached, but this can wait for now.
 
 
 ### take a sample
 - My initial goal was to trigger an interrupt at a given pressure threshold and stop the pump, or shut the system down if that threshold wasn't achievable in time. However, I realized that it would make more sense to calculate when the rate of change of the pressure approaches the noise threshold. I am not sure how this will go when I am pumping into a can that is at vacuum, but I might just implement a silly fix and wait a certain amount of time before the exponential smoothing function takes over
 
-### water trapping
-- additionally, this project will incorporate the water trap that was my 316 project (dew point of like -20 $\degree$C, in series with a magnesium perchlorate drying tube. I still need to change the TECs and figure out if it is feasible to briefly turn them into TEHs (with an h-bridge) to remove trapped water when not sampling.
+
+### write logged data to csv, exportable by usb(?) since Compact Flash disk didn't work as I'd hoped
