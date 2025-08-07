@@ -9,7 +9,7 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
 - 8x electronically actuated valves (US Solid)
 - Pump (??? ancient and has no identifying markings but it runs on 12V so that's good enough!)
 - Drying system 
-    - magnesium perchlorate tube (chemical drying agent)
+    - magnesium perchlorate tube (homemade)
     - TECs: 2x 12715, 2x 12715 (generic)
     - Thermal paste (generic)
     - Water cooling system (generic)
@@ -19,6 +19,7 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
 - Digital pressure gauge (MCMaster)
 - Songle relays (generic)
 - Power supply
+- 12 $\rightarrow$ 5V voltage divider (homemade)
 
 # Goals of the program
 ### control pump and valves 
