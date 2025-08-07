@@ -1,6 +1,4 @@
 # Introduction
-Hello future me, and maybe people who are here from my resume?
-
 This is a CRBasic program for the autosampler I am building. Here are my goals at this moment, and hopefully I will be good about documenting my progress. Slowly transitioning from Obsidian to GitHub because I prefer the version control + increased access on here, and I wasn't big on Obsidian to begin with
 
 # Hardware
