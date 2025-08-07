@@ -73,48 +73,45 @@ BeginProg
         T1 = 0
         'StopNow = False
       EndIf
-      
-  ElseIf State = "SAMPLE" Then
-    ' ==== actuate pump then valve (active-low relays) ====
-    PortSet(2, 0)   ' Pump ON (C2: 0 = on)
-    If T1 >= 1 Then
-      PortSet(1, 0) ' Valve OPEN (C1)
-    EndIf
-
-    ' === compute derivative (psi/sec) ===
-    ' PrevPressure holds the previous-pressure in psi
-    If T1 = 0 Then
-      ' first sample in state: initialize
-      PrevPressure = Pressure_psi
-      Deriv = 0
-      DerivSm = 0
-      DerivStreak = 0
-    Else
-      Deriv = (Pressure_psi - PrevPressure) / SCAN_INTERVAL_SECS   ' psi/sec
-      ' Exponential moving average smoothing (alpha = 0.3)
-      DerivSm = (ALPHA * Deriv) + ((1-ALPHA) * DerivSm)
-      ' Check absolute of smoothed derivative
-      If ABS(DerivSm) <= DERIV_THRESH Then
-        DerivStreak = DerivStreak + 1
-      Else
-        DerivStreak = 0
+  
+    ElseIf State = "SAMPLE" Then
+      ' === Activate pump, then valve (active-low logic) ===
+      PortSet(2, 0)  ' Pump ON (C2)
+      If T1 >= 1 Then
+        PortSet(1, 0)  ' Valve ON (C1)
       EndIf
-      PrevPressure = Pressure_psi
-    EndIf
-  T1 = T1 + 1
 
-  ' Stop if derivative stable or timeout or hardware trip
-    If (DerivStreak >= DERIV_COUNT_REQ) Then
-      State = "SHUTDOWN"
-      T1 = 0
-    EndIf
+      ' === Compute smoothed derivative after 5 minutes ===
+      If T1 = 0 Then
+        PrevPressure = Pressure_psi
+        Deriv = 0
+        DerivSm = 0
+        DerivStreak = 0
+      ElseIf T1 > 300 Then  ' Ignore first 5 min
+        Deriv = (Pressure_psi - PrevPressure) / SCAN_INTERVAL_SECS
+        DerivSm = (ALPHA * Deriv) + ((1 - ALPHA) * DerivSm)
+
+        If ABS(DerivSm) <= DERIV_THRESH Then
+          DerivStreak = DerivStreak + 1
+        Else
+          DerivStreak = 0
+        EndIf
+        PrevPressure = Pressure_psi
+      EndIf
+
+      ' === Check exit conditions ===
+      If (DerivStreak >= DERIV_COUNT_REQ) OR (T1 >= TIMEOUT_SCANS) OR StopNow Then
+        State = "SHUTDOWN"
+        T1 = 0
+      EndIf
+
       T1 = T1 + 1
 
     ElseIf State = "SHUTDOWN" Then
       ' Close valve first, then turn off pump after a delay
       PortSet(1, 0)   ' Close valve immediately
-      If T1 >= 1 Then
-        PortSet(2, 0)   ' Turn off pump after 1 scan
+      If T1 >= 10 Then
+        PortSet(2, 0)   ' Turn off pump after 10 seconds
         State = "DONE"
       EndIf
       T1 = T1 + 1
