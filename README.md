@@ -12,7 +12,8 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
   
 ### read pressure sensor
 - The pressure sensor covers a range of 0 to 145 psig. The recorded pressure is then converted to a voltage between 1 and 4 V, so a function should be created for pressure readout such that:
-$$ y = \frac{145}{4}(x-1)$$ where $y$ is the pressure and $x$ is the output voltage. The output is read through the campell's first analog channel.
+$y = \frac{145}{4}(x-1)$,
+where $y$ is the pressure and $x$ is the output voltage. The output is read through the campell's first analog channel.
 
 ### take a sample
 - My initial goal was to trigger an interrupt at a given pressure threshold and stop the pump, or shut the system down if that threshold wasn't achievable in time. However, I realized that it would make more sense to calculate when the rate of change of the pressure approaches the noise threshold. I am not sure how this will go when I am pumping into a can that is at vacuum, but I might just implement a silly fix and wait a certain amount of time before the exponential smoothing function takes over
