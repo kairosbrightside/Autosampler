@@ -3,6 +3,23 @@ Hello future me, and maybe people who are here from my resume?
 
 This is a CRBasic program for the autosampler I am building. Here are my goals at this moment, and hopefully I will be good about documenting my progress. Slowly transitioning from Obsidian to GitHub because I prefer the version control + increased access on here, and I wasn't big on Obsidian to begin with
 
+# Hardware
+### Components
+- CR3000 micrologger (Campbell scientific)
+- 8x electronically actuated valves (US Solid)
+- Pump (??? ancient and has no identifying markings but it runs on 12V so that's good enough!)
+- Drying system 
+    - magnesium perchlorate tube (chemical drying agent)
+    - TECs: 2x 12715, 2x 12715 (generic)
+    - Thermal paste (generic)
+    - Water cooling system (generic)
+    - Thermocouple (Omega Engineering)
+- 6x sample cans (0.8 L SUMMA)
+  - ideally also one can for zero air/purge gas prior to sampling
+- Digital pressure gauge (MCMaster)
+- Songle relays (generic)
+- Power supply
+
 # Goals of the program
 ### control pump and valves 
 - Pump control: turn pump on and off
