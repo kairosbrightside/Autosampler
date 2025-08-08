@@ -18,6 +18,7 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
 - Songle relays (generic)
 - Power supply
 - 12 $\rightarrow$ 5V voltage divider (homemade)
+- CD74HC4067 multiplexing board so we don't need more relays
 
 # Goals of the program
 ### control pump and valves 
