@@ -8,6 +8,8 @@ Public ScanCounter As Long        ' Start-up delay counter
 Dim PortInput As Long          ' Destination for PortGet (digital read on C8)
 Public SampleTrigger As Boolean
 Public Hour, Minute as Long
+Public LogSampleNow As Boolean
+Public SampleID as Long
 
 '=== silly derivative thing ===
 Public PrevPressure As Float
@@ -23,15 +25,6 @@ Const PRESSURE_THRESHOLD = 41.0   ' pump maxes out around here
 Const TIMEOUT_SCANS = 360            ' e.g. 6 min at 10s scans = 360
 Const STARTUP_DELAY_SCANS = 10     ' 10s at 1s scan rate
 Const SCAN_INTERVAL_SECS = 1
-
-' === Data Table ===
-DataTable(SampleLog, True, -1)
-  DataInterval(0, SCAN_INTERVAL_SECS, Sec, 1)
-  Sample(1, V_Pressure, FP2)     ' logged in mV (or convert to V if you prefer)
-  Sample(1, Pressure_psi, FP2)
-  Sample(1, State, String)
- ' Sample(1, StopNow, Boolean)    ' log the stop event (will show with timestamp)
-EndTable
 
 ' === Pressure Conversion Function ===
 Function VoltageToPSI(V As Float) As Float
@@ -53,7 +46,6 @@ BeginProg
   T1 = 0
   'StopNow = False
   PortInput = 0
-
   ' silly derivative thing
   PrevPressure = 0
   Deriv = 0
@@ -112,6 +104,14 @@ BeginProg
 
       ' === Check exit conditions ===
       If (DerivStreak >= DERIV_COUNT_REQ) Then
+        ' === Data Table ===
+        DataTable(SampleLog, True, -1)
+        DataInterval(0, SCAN_INTERVAL_SECS, Sec, 1)
+        Sample(1, V_Pressure, FP2)     ' logged in mV (or convert to V if you prefer)
+        Sample(1, Pressure_psi, FP2)
+        Sample(1, State, String)
+        Sample(1, StopNow, Boolean)    ' log the stop event (will show with timestamp)
+      EndTable
         State = "SHUTDOWN"
         T1 = 0
       EndIf
@@ -133,6 +133,7 @@ BeginProg
       PortSet(2, 1)
       ' System idle - you can add code to reset State= "WAIT" if you want cycles
     EndIf
+      SampleID = SampleID + 1
 
     ' === Logging ===
     CallTable SampleLog
