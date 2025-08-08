@@ -1,0 +1,142 @@
+' === Declarations ===
+Public V_Pressure As Float     ' single-ended mV reading from VoltSE
+Public Pressure_psi As Float   ' Converted pressure
+Public T1 As Long                 ' Scan counter inside states
+Public State As String * 10    ' State machine
+Public ScanCounter As Long        ' Start-up delay counter
+'Dim StopNow As Boolean         ' Set when C8 trips
+Dim PortInput As Long          ' Destination for PortGet (digital read on C8)
+Public SampleTrigger As Boolean
+Public Hour, Minute as Long
+
+'=== silly derivative thing ===
+Public PrevPressure As Float
+Public Deriv As Float
+Public DerivSm As Float
+Public DerivStreak As Long
+Const DERIV_THRESH = 0.2           ' psi/sec threshold (tune this)
+Const DERIV_COUNT_REQ = 10           ' consecutive smoothed-deriv checks required
+Const ALPHA = 0.35
+
+' === Constants ===
+Const PRESSURE_THRESHOLD = 41.0   ' pump maxes out around here
+Const TIMEOUT_SCANS = 360            ' e.g. 6 min at 10s scans = 360
+Const STARTUP_DELAY_SCANS = 10     ' 10s at 1s scan rate
+Const SCAN_INTERVAL_SECS = 1
+
+' === Data Table ===
+DataTable(SampleLog, True, -1)
+  DataInterval(0, SCAN_INTERVAL_SECS, Sec, 1)
+  Sample(1, V_Pressure, FP2)     ' logged in mV (or convert to V if you prefer)
+  Sample(1, Pressure_psi, FP2)
+  Sample(1, State, String)
+ ' Sample(1, StopNow, Boolean)    ' log the stop event (will show with timestamp)
+EndTable
+
+' === Pressure Conversion Function ===
+Function VoltageToPSI(V As Float) As Float
+  ' V is in volts (convert if you log mV)
+  If V <= 1.0 Then
+    VoltageToPSI = 0
+  ElseIf V >= 5.0 Then
+    VoltageToPSI = 145.0
+  Else
+    VoltageToPSI = (V - 1.0) * (145.0 / 4.0)
+  EndIf
+EndFunction
+
+' === Main Program ===
+BeginProg
+  ' initialize variables
+  State = "WAIT"
+  ScanCounter = 0
+  T1 = 0
+  'StopNow = False
+  PortInput = 0
+
+  ' silly derivative thing
+  PrevPressure = 0
+  Deriv = 0
+  DerivSm = 0
+  DerivStreak = 0
+  ' Main scan loop: runs every SCAN_INTERVAL_SECS
+  Scan(SCAN_INTERVAL_SECS, Sec, 0, 0)
+    RealTime(Hour, Minute)
+    If TimeIntoInterval(0, 1440, Min) Then  ' Reset flag at midnight
+      SampleTrigger = False
+    EndIf
+
+    If (SampleTrigger = False) AND (Hour = 14) AND (Minute = 0) Then
+      SampleTrigger = True
+      State = "SAMPLE"
+      T1 = 0
+    EndIf
+    ' === Read sensor (single-ended) ===
+    ' VoltSE reads mV into V_Pressure, so divide by 1000 to get V
+    VoltSe (V_Pressure, 1, mV5000, 1, 0, 0, 0, 1/1000, 0)
+    Pressure_psi = VoltageToPSI(V_Pressure)
+
+    ' === State machine ===
+    If State = "WAIT" Then
+      ScanCounter = ScanCounter + 1
+      If ScanCounter >= STARTUP_DELAY_SCANS Then
+        State = "SAMPLE"
+        T1 = 0
+        'StopNow = False
+      EndIf
+      
+    ElseIf State = "SAMPLE" Then
+      ' === Activate pump, then valve (active-low logic) ===
+      PortSet(2, 0)  ' Pump ON (C2)
+      If T1 >= 1 Then
+        PortSet(1, 0)  ' Valve ON (C1)
+      EndIf
+
+      ' === Compute smoothed derivative after 5 minutes ===
+      If T1 = 0 Then
+        PrevPressure = Pressure_psi
+        Deriv = 0
+        DerivSm = 0
+        DerivStreak = 0
+      ElseIf T1 > 300 Then  ' Ignore first 5 min
+        Deriv = (Pressure_psi - PrevPressure) / SCAN_INTERVAL_SECS
+        DerivSm = (ALPHA * Deriv) + ((1 - ALPHA) * DerivSm)
+
+        If ABS(DerivSm) <= DERIV_THRESH Then
+          DerivStreak = DerivStreak + 1
+        Else
+          DerivStreak = 0
+        EndIf
+        PrevPressure = Pressure_psi
+      EndIf
+
+      ' === Check exit conditions ===
+      If (DerivStreak >= DERIV_COUNT_REQ) Then
+        State = "SHUTDOWN"
+        T1 = 0
+      EndIf
+
+      T1 = T1 + 1
+     
+
+    ElseIf State = "SHUTDOWN" Then
+      ' Close valve first, then turn off pump after a delay
+      PortSet(1, 0)   ' Close valve immediately
+      If T1 >= 10 Then
+        PortSet(2, 0)   ' Turn off pump after 1 scan
+        State = "DONE"
+      EndIf
+      T1 = T1 + 1
+
+    ElseIf State = "DONE" Then
+      PortSet(1, 1)
+      PortSet(2, 1)
+      ' System idle - you can add code to reset State= "WAIT" if you want cycles
+    EndIf
+
+    ' === Logging ===
+    CallTable SampleLog
+
+  NextScan
+
+EndProg
