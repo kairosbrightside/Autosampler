@@ -6,6 +6,7 @@ Public State As String * 10       ' State machine
 Public ScanCounter As Long        ' Start-up delay counter
 Public SampleTrigger As Boolean
 Public SampleID As Long
+Public LogSampleNow As Boolean    ' Flag to log at SAMPLE → SHUTDOWN
 
 ' Timekeeping
 Dim RT(9) As Long                 ' RealTime array
@@ -22,16 +23,17 @@ Const DERIV_COUNT_REQ = 10        ' consecutive smoothed-deriv checks required
 Const ALPHA = 0.35
 
 ' === Constants ===
-Const STARTUP_DELAY_SCANS = 10    ' 10s at 1s scan rate
 Const SCAN_INTERVAL_SECS = 1
 
 ' === Data Table ===
 DataTable(SampleLog, True, -1)
-  DataInterval(0, 0, Sec, 0)  ' Event-based logging
+  DataInterval(0, 0, Sec, 0)  ' Event-based logging only when called
   Sample(1, V_Pressure, FP2)
   Sample(1, Pressure_psi, FP2)
   Sample(1, State, String)
   Sample(1, SampleID, Long)
+  Sample(1, HourNow, Long)
+  Sample(1, MinuteNow, Long)
 EndTable
 
 ' === Pressure Conversion Function ===
@@ -57,9 +59,10 @@ BeginProg
   DerivStreak = 0
   SampleTrigger = False
   SampleID = 0
+  LogSampleNow = False
 
   Scan(SCAN_INTERVAL_SECS, Sec, 0, 0)
-    
+
     ' --- Read clock ---
     RealTime(RT())
     HourNow = RT(4)
@@ -71,7 +74,7 @@ BeginProg
     EndIf
 
     ' Daily sample trigger at 14:00
-    If (SampleTrigger = False) AND (HourNow = 14) AND (MinuteNow =0) Then
+    If (SampleTrigger = False) AND (HourNow = 14) AND (MinuteNow = 0) Then
       SampleTrigger = True
       State = "SAMPLE"
       T1 = 0
@@ -112,8 +115,7 @@ BeginProg
 
       ' Stop condition only from smoothing
       If (DerivStreak >= DERIV_COUNT_REQ) Then
-        ' Log *one row* at the stop moment
-        CallTable SampleLog
+        LogSampleNow = True
         State = "SHUTDOWN"
         T1 = 0
       EndIf
@@ -134,6 +136,13 @@ BeginProg
       ' Idle
       PortSet(1, 1)
       PortSet(2, 1)
+    EndIf
+
+    ' === Logging control ===
+    If LogSampleNow Then
+      CallTable SampleLog
+      CardFlush()        ' force immediate write to CF card
+      LogSampleNow = False
     EndIf
 
   NextScan
