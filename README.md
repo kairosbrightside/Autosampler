@@ -42,4 +42,6 @@ where $y$ is the pressure and $x$ is the output voltage. The output is read thro
 - My initial goal was to trigger an interrupt at a given pressure threshold and stop the pump, or shut the system down if that threshold wasn't achievable in time. However, I realized that it would make more sense to calculate when the rate of change of the pressure approaches the noise threshold. I am not sure how this will go when I am pumping into a can that is at vacuum, but I might just implement a silly fix and wait a certain amount of time before the exponential smoothing function takes over
 
 
-### write logged data to csv, exportable by usb(?) since Compact Flash disk didn't work as I'd hoped
+### write logged data to CF card
+- I hope it is exportable to csv but i am not sure...
+- 
