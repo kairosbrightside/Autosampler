@@ -43,6 +43,11 @@ where $y$ is the pressure and $x$ is the output voltage. The output is read thro
 ### take a sample
 - My initial goal was to trigger an interrupt at a given pressure threshold and stop the pump, or shut the system down if that threshold wasn't achievable in time. However, I realized that it would make more sense to calculate when the rate of change of the pressure approaches the noise threshold. I am not sure how this will go when I am pumping into a can that is at vacuum, but I might just implement a silly fix and wait a certain amount of time before the exponential smoothing function takes over
 
+### Sample procedure
+1) Open the purge valve (v7) and run air through for 5 minutes (300 seconds)
+2) Close the purge valve and open the valve on a given sample can
+3) When $\Delta P \to 0$, open purge valve again. Then vent can and fill again (repeat this 2x?)
+4) Finally, log final sample pressure and time
 
 ### write logged data to CF card
 - I hope it is exportable to csv but i am not sure...
