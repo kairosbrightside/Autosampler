@@ -29,12 +29,12 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
   
 ### read pressure sensor and thermocouple
 - The CR3000 is using a 1s scan rate
-- The pressure sensor covers a range of 0 to 145 psig. The recorded pressure is then converted to a voltage between 1 and 4 V, so a function should be created for pressure readout such that:
-      - The DC+ should be connected to brown and DC- should be connected to blue!!
-  
+- The pressure sensor covers a range of 0 to 145 psig. The recorded pressure is then converted to a voltage between 1 and 4 V, so a function should be created for pressure readout such that:  
 $$ y = \frac{145}{4}(x-1) $$
 
 where $y$ is the pressure and $x$ is the output voltage. The output is read through the campell's first analog channel.
+
+- The DC+ should be connected to brown and DC- should be connected to blue!!
 
 - I would also like to read the differential output of the thermocouple, and log the dew point and lowest temperature it reached, but this can wait for now.
 
