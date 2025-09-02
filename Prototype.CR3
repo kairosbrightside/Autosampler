@@ -75,10 +75,10 @@ BeginProg
       EndIf
   
     ElseIf State = "SAMPLE" Then
-      ' === Activate pump, then valve (active-low logic) ===
-      PortSet(2, 0)  ' Pump ON (C2)
+      ' === Activate valve, then pump (active-low logic) ===
+      PortSet(7, 0)  ' purge valve on ON (C7)
       If T1 >= 1 Then
-        PortSet(1, 0)  ' Valve ON (C1)
+        PortSet(8, 0)  ' Pump ON (C8)
       EndIf
 
       ' === Compute smoothed derivative after 5 minutes ===
