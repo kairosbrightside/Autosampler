@@ -77,7 +77,7 @@ BeginProg
     EndIf
 
     ' Trigger at 11:00, 12:00, 13:00
-    If (SampleTrigger = False) AND ((HourNow = 11) OR (HourNow = 12) OR (HourNow = 13)) AND (MinuteNow = 05) Then
+    If (SampleTrigger = False) AND ((HourNow = 11) OR (HourNow = 12) OR (HourNow = 13)) AND (MinuteNow = 20) Then
       SampleTrigger = True
       CurrentCan = CurrentCan + 1
       SampleID = SampleID + 1
@@ -119,6 +119,7 @@ BeginProg
         PurgeCount = PurgeCount + 1
         If PurgeCount < 2 Then
           ' repeat purge
+          State = "CAN_PURGE"
         Else
           State = "SAMPLE"
         EndIf
