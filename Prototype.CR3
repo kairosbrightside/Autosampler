@@ -105,20 +105,19 @@ BeginProg
         State = "CAN_PURGE"
       EndIf
       T1 = T1 + 1
-
     ElseIf State = "CAN_PURGE" Then
-      ' purge line + can
       PortSet(8, 1)  ' pump ON
-      PortSet(7, 0)  ' purge valve off !
+      PortSet(7, 0)  ' purge valve OFF
       If CurrentCan = 1 Then PortSet(1, 1)
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
 
-      If T1 > 300:
-        PortSet(7,1)' vent open
+      If T1 >= 300 Then   ' 5 minutes purge
+        PortSet(7, 1)     ' vent ON
         PurgeCount = PurgeCount + 1
+        T1 = 0            ' reset timer!
         If PurgeCount < 2 Then
-          ' repeat purge
+          ' repeat purge again
           State = "CAN_PURGE"
         Else
           State = "SAMPLE"
@@ -127,12 +126,12 @@ BeginProg
       T1 = T1 + 1
 
     ElseIf State = "SAMPLE" Then
-      ' final fill, purge OFF
-      PortSet(7, 1)
+      ' final fill
+      PortSet(8, 1)  ' pump ON
+      PortSet(7, 0)  ' purge OFF
       If CurrentCan = 1 Then PortSet(1, 1)
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
-      PortSet(8, 1)
 
       If T1 = 0 Then
         PrevPressure = Pressure_psi
@@ -149,9 +148,10 @@ BeginProg
         PrevPressure = Pressure_psi
       EndIf
 
+      ' stop either by derivative OR timeout
       If (DerivStreak >= DERIV_COUNT_REQ) Then
         LogSampleNow = True
-        State = "SHUTDOWN"
+          State = "SHUTDOWN"
         T1 = 0
       EndIf
       T1 = T1 + 1
