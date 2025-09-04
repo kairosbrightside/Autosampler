@@ -77,7 +77,7 @@ BeginProg
     EndIf
 
     ' Trigger at 11:00, 12:00, 13:00
-    If (SampleTrigger = False) AND ((HourNow = 11) OR (HourNow = 12) OR (HourNow = 13)) AND (MinuteNow = 00) Then
+    If (SampleTrigger = False) AND ((HourNow = 11) OR (HourNow = 12) OR (HourNow = 13)) AND (MinuteNow = 05) Then
       SampleTrigger = True
       CurrentCan = CurrentCan + 1
       SampleID = SampleID + 1
@@ -96,10 +96,10 @@ BeginProg
 
     ElseIf State = "FIRST_PURGE" Then
       ' purge line only
-      PortSet(8, 0)  ' pump ON
-      PortSet(7, 0)  ' purge valve OPEN 
+      PortSet(8, 1)  ' pump ON
+      PortSet(7, 1)  ' purge valve OPEN 
       If T1 = PURGE_DURATION Then
-        PortSet(7, 1) 'purge valve off
+        PortSet(7, 0) 'purge valve off
         T1 = 0
         PurgeCount = 0
         State = "CAN_PURGE"
@@ -108,18 +108,14 @@ BeginProg
 
     ElseIf State = "CAN_PURGE" Then
       ' purge line + can
-      PortSet(8, 0)  ' pump ON
-      PortSet(7, 1)  ' purge valve off !
-      If CurrentCan = 1 Then PortSet(1, 0)
-
-      
-      If CurrentCan = 2 Then PortSet(2, 0)
-
-      
-      If CurrentCan = 3 Then PortSet(3, 0)
+      PortSet(8, 1)  ' pump ON
+      PortSet(7, 0)  ' purge valve off !
+      If CurrentCan = 1 Then PortSet(1, 1)
+      If CurrentCan = 2 Then PortSet(2, 1)
+      If CurrentCan = 3 Then PortSet(3, 1)
 
       If T1 > 300:
-        PortSet(7,0)
+        PortSet(7,1)' vent open
         PurgeCount = PurgeCount + 1
         If PurgeCount < 2 Then
           ' repeat purge
@@ -132,10 +128,10 @@ BeginProg
     ElseIf State = "SAMPLE" Then
       ' final fill, purge OFF
       PortSet(7, 1)
-      If CurrentCan = 1 Then PortSet(1, 0)
-      If CurrentCan = 2 Then PortSet(2, 0)
-      If CurrentCan = 3 Then PortSet(3, 0)
-      PortSet(8, 0)
+      If CurrentCan = 1 Then PortSet(1, 1)
+      If CurrentCan = 2 Then PortSet(2, 1)
+      If CurrentCan = 3 Then PortSet(3, 1)
+      PortSet(8, 1)
 
       If T1 = 0 Then
         PrevPressure = Pressure_psi
@@ -161,12 +157,12 @@ BeginProg
 
     ElseIf State = "SHUTDOWN" Then
       ' close all valves
-      PortSet(7, 1)
-      PortSet(1, 1)
-      PortSet(2, 1)
-      PortSet(3, 1)
+      PortSet(7, 0)
+      PortSet(1, 0)
+      PortSet(2, 0)
+      PortSet(3, 0)
       If T1 >= 10 Then
-        PortSet(8, 1)  ' pump OFF
+        PortSet(8, 0)  ' pump OFF
         State = "DONE"
       EndIf
       T1 = T1 + 1
