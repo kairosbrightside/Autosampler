@@ -110,9 +110,7 @@ BeginProg
       ' purge line + can
       PortSet(8, 0)  ' pump ON
       PortSet(7, 1)  ' purge valve off !
-      If CurrentCan = 1 Then PortSet(1, 0)
-      If CurrentCan = 2 Then PortSet(2, 0)
-      If CurrentCan = 3 Then PortSet(3, 0)
+      PortSet(CurrentCan, 0)
 
       If T1 > 300:
         PortSet(7,0)
