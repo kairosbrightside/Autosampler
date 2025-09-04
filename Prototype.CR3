@@ -5,6 +5,7 @@ Public T1 As Long
 Public State As String * 15
 Public SampleTrigger As Boolean
 Public SampleID As Long
+Public LogSampleNow As Boolean
 Public CurrentCan As Long
 Public PurgeCount As Long
 
@@ -13,7 +14,7 @@ Dim RT(9) As Long
 Public HourNow As Long
 Public MinuteNow As Long
 
-' Derivative-based stop
+' === derivative-based stopping ===
 Public PrevPressure As Float
 Public Deriv As Float
 Public DerivSm As Float
@@ -22,10 +23,11 @@ Const DERIV_THRESH = 0.2
 Const DERIV_COUNT_REQ = 10
 Const ALPHA = 0.35
 
-' Constants
+' === Constants ===
 Const SCAN_INTERVAL_SECS = 1
+Const PURGE_DURATION = 300   ' 5 min purge
 
-' Data Table
+' === Data Table ===
 DataTable(SampleLog, True, -1)
   DataInterval(0, 0, Sec, 0)
   Sample(1, V_Pressure, FP2)
@@ -33,9 +35,11 @@ DataTable(SampleLog, True, -1)
   Sample(1, State, String)
   Sample(1, SampleID, Long)
   Sample(1, CurrentCan, Long)
+  Sample(1, HourNow, Long)
+  Sample(1, MinuteNow, Long)
 EndTable
 
-' Pressure conversion
+' === Pressure Conversion Function ===
 Function VoltageToPSI(V As Float) As Float
   If V <= 1.0 Then
     VoltageToPSI = 0
@@ -50,50 +54,52 @@ EndFunction
 BeginProg
   State = "WAIT"
   T1 = 0
-  SampleTrigger = False
-  SampleID = 0
-  CurrentCan = 0
-  PurgeCount = 0
   PrevPressure = 0
   DerivSm = 0
   DerivStreak = 0
+  SampleTrigger = False
+  SampleID = 0
+  LogSampleNow = False
+  CurrentCan = 0
+  PurgeCount = 0
 
   Scan(SCAN_INTERVAL_SECS, Sec, 0, 0)
 
-    ' Read clock
+    ' --- Clock ---
     RealTime(RT())
     HourNow = RT(4)
     MinuteNow = RT(5)
 
-    ' Reset daily trigger
+    ' Reset trigger daily
     If TimeIntoInterval(0, 1440, Min) Then
       SampleTrigger = False
+      CurrentCan = 0
     EndIf
 
-    ' Trigger at 11:00, 12:00, 13:00 (example)
-    If (SampleTrigger = False) AND ((HourNow = 11) OR (HourNow = 12) OR (HourNow = 13)) AND (MinuteNow = 0) Then
+    ' Trigger at 11:00, 12:00, 13:00
+    If (SampleTrigger = False) AND ((HourNow = 11) OR (HourNow = 12) OR (HourNow = 13)) AND (MinuteNow = 00) Then
       SampleTrigger = True
+      CurrentCan = CurrentCan + 1
+      SampleID = SampleID + 1
       State = "FIRST_PURGE"
       T1 = 0
-      SampleID = SampleID + 1
-      CurrentCan = CurrentCan + 1
       PurgeCount = 0
     EndIf
 
-    ' Read pressure
+    ' --- Pressure ---
     VoltSe(V_Pressure, 1, mV5000, 1, 0, 0, 0, 1/1000, 0)
     Pressure_psi = VoltageToPSI(V_Pressure)
 
-    ' === State machine ===
+    ' === State Machine ===
     If State = "WAIT" Then
       ' Idle
 
     ElseIf State = "FIRST_PURGE" Then
-      ' Purge line only for 5 min
+      ' purge line only
       PortSet(7, 0)  ' purge valve ON
       PortSet(8, 0)  ' pump ON
-      If T1 >= 300 Then
-        PortSet(7, 1)  ' close purge
+      If T1 = PURGE_DURATION Then
+        PortSet(7, 1) 'purge valve off
         T1 = 0
         PurgeCount = 0
         State = "CAN_PURGE"
@@ -101,14 +107,32 @@ BeginProg
       T1 = T1 + 1
 
     ElseIf State = "CAN_PURGE" Then
-      ' Purge line + can
-      PortSet(7, 0)   ' purge ON
+      ' purge line + can
+      PortSet(8, 0)  ' pump ON
+      PortSet(7, 1)  ' purge valve off !
       If CurrentCan = 1 Then PortSet(1, 0)
       If CurrentCan = 2 Then PortSet(2, 0)
       If CurrentCan = 3 Then PortSet(3, 0)
-      PortSet(8, 0)   ' pump ON
 
-      ' Derivative
+      If T1 > 300:
+        PortSet(7,0)
+        PurgeCount = PurgeCount + 1
+        If PurgeCount < 2 Then
+          ' repeat purge
+        Else
+          State = "SAMPLE"
+        EndIf
+      EndIf
+      T1 = T1 + 1
+
+    ElseIf State = "SAMPLE" Then
+      ' final fill, purge OFF
+      PortSet(7, 1)
+      If CurrentCan = 1 Then PortSet(1, 0)
+      If CurrentCan = 2 Then PortSet(2, 0)
+      If CurrentCan = 3 Then PortSet(3, 0)
+      PortSet(8, 0)
+
       If T1 = 0 Then
         PrevPressure = Pressure_psi
         DerivSm = 0
@@ -125,57 +149,18 @@ BeginProg
       EndIf
 
       If (DerivStreak >= DERIV_COUNT_REQ) Then
-        ' close can
-        If CurrentCan = 1 Then PortSet(1, 1)
-        If CurrentCan = 2 Then PortSet(2, 1)
-        If CurrentCan = 3 Then PortSet(3, 1)
-        PurgeCount = PurgeCount + 1
-        DerivStreak = 0
-        T1 = 0
-        If PurgeCount < 3 Then
-          ' more purge cycles
-        Else
-          State = "SAMPLE"
-        EndIf
-      EndIf
-      T1 = T1 + 1
-
-    ElseIf State = "SAMPLE" Then
-      ' Final fill: can only, purge OFF
-      PortSet(7, 1)
-      If CurrentCan = 1 Then PortSet(1, 0)
-      If CurrentCan = 2 Then PortSet(2, 0)
-      If CurrentCan = 3 Then PortSet(3, 0)
-      PortSet(8, 0)
-
-      If T1 < 30 Then
-        PrevPressure = Pressure_psi
-        DerivSm = 0
-        DerivStreak = 0
-      Else
-        Deriv = (Pressure_psi - PrevPressure) / SCAN_INTERVAL_SECS
-        DerivSm = (ALPHA * Deriv) + ((1 - ALPHA) * DerivSm)
-        If ABS(DerivSm) <= DERIV_THRESH Then
-          DerivStreak = DerivStreak + 1
-        Else
-          DerivStreak = 0
-        EndIf
-        PrevPressure = Pressure_psi
-      EndIf
-
-      If (DerivStreak >= DERIV_COUNT_REQ) Then
-        CallTable SampleLog
+        LogSampleNow = True
         State = "SHUTDOWN"
         T1 = 0
       EndIf
       T1 = T1 + 1
 
     ElseIf State = "SHUTDOWN" Then
-      ' Close everything
+      ' close all valves
+      PortSet(7, 1)
       PortSet(1, 1)
       PortSet(2, 1)
       PortSet(3, 1)
-      PortSet(7, 1)
       If T1 >= 10 Then
         PortSet(8, 1)  ' pump OFF
         State = "DONE"
@@ -183,11 +168,15 @@ BeginProg
       T1 = T1 + 1
 
     ElseIf State = "DONE" Then
-      ' idle until next sample
+      ' finished, wait for next trigger
     EndIf
 
-    ' Logging
-    CallTable SampleLog
+    ' === Logging ===
+    If LogSampleNow Then
+      CallTable SampleLog
+      CardFlush()
+      LogSampleNow = False
+    EndIf
 
   NextScan
 EndProg
