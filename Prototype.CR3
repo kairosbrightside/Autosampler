@@ -19,7 +19,7 @@ Public PrevPressure As Float
 Public Deriv As Float
 Public DerivSm As Float
 Public DerivStreak As Long
-Const DERIV_THRESH = 0.2
+Const DERIV_THRESH = 0.3
 Const DERIV_COUNT_REQ = 10
 Const ALPHA = 0.35
 
@@ -101,7 +101,7 @@ BeginProg
     EndIf
 
     ' Trigger at 11:00, 12:00, 13:00
-    If (SampleTrigger = False) AND ((HourNow = 12) OR (HourNow = 13) OR (HourNow = 15)) AND (MinuteNow = 33) Then
+    If (SampleTrigger = False) AND ((HourNow = 14) OR (HourNow = 15) OR (HourNow = 16)) AND (MinuteNow = 15) Then
       SampleTrigger = True
       CurrentCan = CurrentCan + 1
       SampleID = SampleID + 1
@@ -160,7 +160,7 @@ BeginProg
 
       Call UpdateDerivative(Pressure_psi, T1, 150)
 
-      If (DerivStreak >= DERIV_COUNT_REQ) Then
+      If (DerivStreak >= DERIV_COUNT_REQ) OR T1 > 600 Then
         LogSampleNow = True
         State = "SHUTDOWN"
         T1 = 0
@@ -177,6 +177,7 @@ BeginProg
         PortSet(8, 0)  ' pump OFF
         State = "WAIT"
       EndIf
+      T1 = T1 + 1
 
     ' === Logging ===
     If LogSampleNow Then
