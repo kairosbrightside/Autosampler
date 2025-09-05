@@ -50,8 +50,8 @@ Function VoltageToPSI(V As Float) As Float
   EndIf
 EndFunction
 
-' ===== Derivative function with minimum scan delay =====
-Function UpdateDerivative(Pressure As Float, ScanCount As Long, MinScans As Long)
+' ===== Derivative subroutine with minimum scan delay =====
+Sub UpdateDerivative(Pressure As Float, ScanCount As Long, MinScans As Long)
   If ScanCount = 0 Then
     ' reset on entry
     PrevPressure = Pressure
@@ -72,7 +72,7 @@ Function UpdateDerivative(Pressure As Float, ScanCount As Long, MinScans As Long
     ' haven’t reached MinScans yet, just track pressure
     PrevPressure = Pressure
   EndIf
-EndFunction
+EndSub
 
 ' === Main Program ===
 BeginProg
@@ -101,7 +101,7 @@ BeginProg
     EndIf
 
     ' Trigger at 11:00, 12:00, 13:00
-    If (SampleTrigger = False) AND ((HourNow = 11) OR (HourNow = 12) OR (HourNow = 13)) AND (MinuteNow = 50) Then
+    If (SampleTrigger = False) AND ((HourNow = 12) OR (HourNow = 13) OR (HourNow = 15)) AND (MinuteNow = 33) Then
       SampleTrigger = True
       CurrentCan = CurrentCan + 1
       SampleID = SampleID + 1
@@ -137,7 +137,7 @@ BeginProg
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
 
-      UpdateDerivative(Pressure_psi, T1, 150)
+      Call UpdateDerivative(Pressure_psi, T1, 150)
 
       If (DerivStreak >= DERIV_COUNT_REQ) Then
         PortSet(7, 1)     ' vent ON
@@ -158,7 +158,7 @@ BeginProg
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
 
-      UpdateDerivative(Pressure_psi, T1, 150)
+      Call UpdateDerivative(Pressure_psi, T1, 150)
 
       If (DerivStreak >= DERIV_COUNT_REQ) Then
         LogSampleNow = True
