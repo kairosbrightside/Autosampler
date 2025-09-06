@@ -94,8 +94,10 @@ BeginProg
 
     ' Trigger at 10:30, 11:30, 12:30
     If ((HourNow = 10) OR (HourNow = 11) OR (HourNow = 12)) AND (MinuteNow = 30) Then
-      CurrentCan = (CurrentCan Mod 3) + 1   ' cycle 1–3
-      SampleID = SampleID + 1
+      If CurrentCan < 3 Then
+        CurrentCan = CurrentCan + 1  ' cycle 1–3
+        SampleID = SampleID + 1
+      EndIf
       State = "FIRST_PURGE"
       T1 = 0
       PurgeCount = 0
