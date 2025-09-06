@@ -3,7 +3,6 @@ Public V_Pressure As Float
 Public Pressure_psi As Float
 Public T1 As Long
 Public State As String * 15
-Public SampleTrigger As Boolean
 Public SampleID As Long
 Public LogSampleNow As Boolean
 Public CurrentCan As Long
@@ -21,7 +20,7 @@ Public DerivSm As Float
 Public DerivStreak As Long
 Const DERIV_THRESH = 0.3
 Const DERIV_COUNT_REQ = 10
-Const ALPHA = 0.35
+Const ALPHA = 0.3
 
 ' === Constants ===
 Const SCAN_INTERVAL_SECS = 1
@@ -81,7 +80,6 @@ BeginProg
   PrevPressure = 0
   DerivSm = 0
   DerivStreak = 0
-  SampleTrigger = False
   SampleID = 0
   LogSampleNow = False
   CurrentCan = 0
@@ -94,16 +92,9 @@ BeginProg
     HourNow = RT(4)
     MinuteNow = RT(5)
 
-    ' Reset trigger daily
-    If TimeIntoInterval(0, 1440, Min) Then
-      SampleTrigger = False
-      CurrentCan = 0
-    EndIf
-
-    ' Trigger at 11:00, 12:00, 13:00
-    If (SampleTrigger = False) AND ((HourNow = 14) OR (HourNow = 15) OR (HourNow = 16)) AND (MinuteNow = 15) Then
-      SampleTrigger = True
-      CurrentCan = CurrentCan + 1
+    ' Trigger at 10:30, 11:30, 12:30
+    If ((HourNow = 10) OR (HourNow = 11) OR (HourNow = 12)) AND (MinuteNow = 30) Then
+      CurrentCan = (CurrentCan Mod 3) + 1   ' cycle 1–3
       SampleID = SampleID + 1
       State = "FIRST_PURGE"
       T1 = 0
@@ -167,6 +158,7 @@ BeginProg
       EndIf
 
       T1 = T1 + 1
+
     ElseIf State = "SHUTDOWN" Then
       'close all valves
       PortSet(7, 0)
@@ -178,6 +170,7 @@ BeginProg
         State = "WAIT"
       EndIf
       T1 = T1 + 1
+    EndIf
 
     ' === Logging ===
     If LogSampleNow Then
@@ -185,7 +178,6 @@ BeginProg
       CardFlush()
       LogSampleNow = False
     EndIf
-EndIf
 
   NextScan
 EndProg
