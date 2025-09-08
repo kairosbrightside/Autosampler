@@ -18,7 +18,7 @@ Public PrevPressure As Float
 Public Deriv As Float
 Public DerivSm As Float
 Public DerivStreak As Long
-Const DERIV_THRESH = 0.3
+Const DERIV_THRESH = 0.2
 Const DERIV_COUNT_REQ = 10
 Const ALPHA = 0.3
 
@@ -52,7 +52,6 @@ EndFunction
 ' ===== Derivative subroutine with minimum scan delay =====
 Sub UpdateDerivative(Pressure As Float, ScanCount As Long, MinScans As Long)
   If ScanCount = 0 Then
-    ' reset on entry
     PrevPressure = Pressure
     DerivSm = 0
     DerivStreak = 0
@@ -91,13 +90,14 @@ BeginProg
     HourNow = RT(4)
     MinuteNow = RT(5)
 
-    ' Trigger at 10:30, 11:30, 12:30
-    If ((HourNow = 9) OR (HourNow = 10) OR (HourNow = 11)) AND (MinuteNow = 30) Then
-      CurrentCan = CurrentCan + 1  ' cycle 1–3
+    ' Trigger at 10:30, 11:30, 12:30, only from WAIT state
+    If (State = "WAIT") AND ((HourNow = 10) OR (HourNow = 11) OR (HourNow = 12)) AND (MinuteNow = 30) Then
+      CurrentCan = (CurrentCan MOD 3) + 1   ' cycle 1–3
       SampleID = SampleID + 1
       State = "FIRST_PURGE"
       T1 = 0
       PurgeCount = 0
+      DerivStreak = 0
     EndIf
 
     ' --- Pressure ---
@@ -109,20 +109,25 @@ BeginProg
       ' Idle
 
     ElseIf State = "FIRST_PURGE" Then
-      ' purge line only
       PortSet(8, 1)  ' pump ON
       PortSet(7, 1)  ' purge valve OPEN 
       If T1 = PURGE_DURATION Then
-        PortSet(7, 0) 'purge valve off
+        PortSet(7, 0) ' purge valve OFF
         T1 = 0
         PurgeCount = 0
+        DerivStreak = 0
         State = "CAN_PURGE"
       EndIf
       T1 = T1 + 1
-      
+
     ElseIf State = "CAN_PURGE" Then
       PortSet(8, 1)  ' pump ON
       PortSet(7, 0)  ' purge valve OFF
+
+      ' Reset all can valves, then open current one
+      PortSet(1, 0)
+      PortSet(2, 0)
+      PortSet(3, 0)
       If CurrentCan = 1 Then PortSet(1, 1)
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
@@ -133,6 +138,7 @@ BeginProg
         PortSet(7, 1)     ' vent ON
         PurgeCount = PurgeCount + 1
         T1 = 0
+        DerivStreak = 0
         If PurgeCount < 2 Then
           State = "CAN_PURGE"   ' repeat purge again
         Else
@@ -144,22 +150,26 @@ BeginProg
     ElseIf State = "SAMPLE" Then
       PortSet(8, 1)  ' pump ON
       PortSet(7, 0)  ' purge closed
+
+      ' Reset all can valves, then open current one
+      PortSet(1, 0)
+      PortSet(2, 0)
+      PortSet(3, 0)
       If CurrentCan = 1 Then PortSet(1, 1)
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
 
       Call UpdateDerivative(Pressure_psi, T1, 150)
 
-      If (DerivStreak >= DERIV_COUNT_REQ) OR T1 > 600 Then
+      If (DerivStreak >= DERIV_COUNT_REQ) OR (T1 > 600) Then
         LogSampleNow = True
         State = "SHUTDOWN"
         T1 = 0
       EndIf
-
       T1 = T1 + 1
 
     ElseIf State = "SHUTDOWN" Then
-      'close all valves
+      ' close everything
       PortSet(7, 0)
       PortSet(1, 0)
       PortSet(2, 0)
