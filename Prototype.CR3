@@ -68,7 +68,6 @@ Sub UpdateDerivative(Pressure As Float, ScanCount As Long, MinScans As Long)
 
     PrevPressure = Pressure
   Else
-    ' haven’t reached MinScans yet, just track pressure
     PrevPressure = Pressure
   EndIf
 EndSub
@@ -93,11 +92,9 @@ BeginProg
     MinuteNow = RT(5)
 
     ' Trigger at 10:30, 11:30, 12:30
-    If ((HourNow = 10) OR (HourNow = 11) OR (HourNow = 12)) AND (MinuteNow = 30) Then
-      If CurrentCan < 3 Then
-        CurrentCan = CurrentCan + 1  ' cycle 1–3
-        SampleID = SampleID + 1
-      EndIf
+    If ((HourNow = 9) OR (HourNow = 10) OR (HourNow = 11)) AND (MinuteNow = 30) Then
+      CurrentCan = CurrentCan + 1  ' cycle 1–3
+      SampleID = SampleID + 1
       State = "FIRST_PURGE"
       T1 = 0
       PurgeCount = 0
