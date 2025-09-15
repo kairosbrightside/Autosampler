@@ -51,3 +51,22 @@ where $y$ is the pressure and $x$ is the output voltage. The output is read thro
 
 ### write logged data to CF card
 - I think someoene still needs to connect their computer to it to actually export the data though...
+
+# Tests before fielding
+
+### 9/15/25 Week-long leak test
+
+On Monday, 9/8, collected 3 samples of roof air 1h apart and held them for a week. On 9/15, removed the samples to measure them. 
+Cans 1 and 3, which were at 40.36 and 40.39 psig respectively, maintained their pressures when measured by an analog gauge, but can 2 went down to 31 psi for some reason.
+
+Turning the autosampler on its side to leak-check valve connections did not show any major leaks (at least when checked with Swagelock snoop fluid?). 
+However, the source of the large leak after turning off the pump was identified to be the pump itself, as capping the inlet resulted in a significant increase in the time it took for the system to go down from 40 psig, and I felt it with my hand too.
+After capping the pump, the leak rate went down to 0.1 psig every 5ish seconds, with the 4 suspect valves (the one whose can failed the leak test and the 3 new ones) open and capped.
+Closing these valves resulted in an even faster leak rate of 0.1 psig/3 seconds, which indicates that the majority of the leak is probably within the manifold, and not past one of its valves.
+
+##### 9/8 pressure logs:
+"TOA5","CR3000","CR3000","3626","CR3000.Std.09","CPU:prototype.CR3","11936","SampleLog"
+"TIMESTAMP","RECORD","V_Pressure","Pressure_psi","State","SampleID","CurrentCan","HourNow","MinuteNow"
+"2025-09-08 10\:42:57",0,2.113,40.36,"SHUTDOWN",1,1,10,42
+"2025-09-08 11\:42:57",1,2.115,40.41,"SHUTDOWN",2,2,11,42
+"2025-09-08 12\:42:57",2,2.114,40.39,"SHUTDOWN",3,3,12,42
