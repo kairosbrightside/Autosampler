@@ -50,7 +50,7 @@ where $y$ is the pressure and $x$ is the output voltage. The output is read thro
 6) Finally, log final sample pressure and time
 
 ### write logged data to CF card
-- I think someoene still needs to connect their computer to it to actually export the data though...
+- I think someone still needs to connect their computer to it to actually export the data though...
 
 # Tests before fielding
 
