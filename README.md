@@ -11,7 +11,6 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
     - TECs: 2x 12715, 2x 12715 (generic)
     - Thermal paste (generic)
     - Water cooling system (generic)
-    - Thermocouple (Omega Engineering)
 - 6x sample cans (0.8 L SUMMA)
 - Digital pressure gauge (MCMaster)
 - Songle relays (generic), using an 8-relay board for 7 valves + pump
@@ -44,8 +43,8 @@ where $y$ is the pressure and $x$ is the output voltage. The output is read thro
 1) Open the purge valve (v7) 
 2) Turn pump on and run air through sample line for 5 minutes (300 seconds)
 3) Close the purge valve and open the valve on a given sample can
-4) When $\Delta P \to 0$, open purge valve again. Then vent can and fill again (repeat this 2x?)
-5) Once can has been vented 3x, close purge valve and keep can valve open. Fill can.
+4) When $\Delta P \to 0$, open purge valve again. Then vent can and fill again.
+5) Once can has been vented 2x, close purge valve and keep can valve open. Fill can.
 6) Finally, log final sample pressure and time
 
 ### write logged data to CF card
