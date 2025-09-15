@@ -8,9 +8,6 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
 - Pump (??? has no identifying markings but it runs on 12V so that's good enough!)
 - Drying system 
     - magnesium perchlorate tube (homemade)
-    - TECs: 2x 12715, 2x 12715 (generic)
-    - Thermal paste (generic)
-    - Water cooling system (generic)
 - 6x sample cans (0.8 L SUMMA)
 - Digital pressure gauge (MCMaster)
 - Songle relays (generic), using an 8-relay board for 7 valves + pump
