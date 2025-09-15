@@ -2,19 +2,24 @@
 This is a CRBasic program for the autosampler I am building. Here are my goals at this moment, and hopefully I will be good about documenting my progress. 
 
 # Hardware
-### Components
+### Electrical
 - CR3000 micrologger (Campbell scientific)
 - 8x electronically actuated valves (US Solid)
 - Pump (??? has no identifying markings but it runs on 12V so that's good enough!)
-- Drying system 
-    - magnesium perchlorate tube (homemade)
-- 6x sample cans (0.8 L SUMMA)
 - Digital pressure gauge (MCMaster)
 - Songle relays (generic), using an 8-relay board for 7 valves + pump
 - Terminal voltage board 8 x 2 for distributing 12V
 - Power supply for CR3000 (18V)
+### Gas Flow
+- Drying system 
+    - magnesium perchlorate tube (homemade)
+- 6x sample cans (0.8 L SUMMA)
+- 3x Swage cross
+- 1x Swage tee
+  
 Optional (in case of need for more)
 - CD74HC4067 multiplexing board since the CR3000 only has 8 digital pins
+
 
 # Goals of the program
 ### control pump and valves 
