@@ -3,13 +3,14 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
 
 # Hardware
 ### Electrical
-- CR3000 micrologger (Campbell scientific)
+- CR3000 micrologger (Campbell Scientific)
 - 8x electronically actuated valves (US Solid)
 - Pump (??? has no identifying markings but it runs on 12V so that's good enough!)
-- Digital pressure gauge (MCMaster)
+- Digital pressure gauge (MCMaster Carr)
 - Songle relays (generic), using an 8-relay board for 7 valves + pump
-- Terminal voltage board 8 x 2 for distributing 12V
-- Power supply for CR3000 (18V)
+- Terminal voltage board 8 x 2 (generic) for distributing 12V to pump and valves
+- 1/4' tubing to construct manifold. I am not sure how much I ended up using, sorry. If reproducing this setup for any reason, probably buy a couple feet 
+- Power supply for CR3000 (18V DC from 120V AC wall voltage adapter)
 ### Gas Flow
 - Drying system 
     - magnesium perchlorate tube (homemade)
@@ -17,9 +18,8 @@ This is a CRBasic program for the autosampler I am building. Here are my goals a
 - 3x Swage cross
 - 1x Swage tee
   
-Optional (in case of need for more)
+### Optional 
 - CD74HC4067 multiplexing board since the CR3000 only has 8 digital pins
-
 
 # Goals of the program
 ### control pump and valves 
@@ -36,7 +36,7 @@ $$ y = \frac{145}{4}(x-1) $$
 
 where $y$ is the pressure and $x$ is the output voltage. The output is read through the campell's first analog channel.
 
-- The DC+ should be connected to brown and DC- should be connected to blue!!
+- The DC+ should be connected to **brown** and DC- should be connected to **blue**!!
 
 ### Stop samples at the limit of the pump
 - The program uses an exponential smoothing function to calculate when the pump has hit its limit. This is accomplished by calculating the exponentially smoothed derivative of the pressure, and then stopping when that derivative only deviates by values within the noise threshold of the sensor for several increments in a row.
@@ -55,7 +55,6 @@ where $y$ is the pressure and $x$ is the output voltage. The output is read thro
 # Tests before fielding
 
 ### 9/15/25 Week-long leak test
-
 On Monday, 9/8, collected 3 samples of roof air 1h apart and held them for a week. On 9/15, removed the samples to measure them. 
 Cans 1 and 3, which were at 40.36 and 40.39 psig respectively, maintained their pressures when measured by an analog gauge, but can 2 went down to 31 psi for some reason.
 
