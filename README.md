@@ -1,5 +1,5 @@
 # Introduction
-This is a CRBasic program for the autosampler I am building. Here are my goals at this moment, and hopefully I will be good about documenting my progress. 
+This repository contains the code and documentation for L.U.N.A. (Laboratory/Low-cost Unit for Near-background Atmospheric/Autonomous Samples/Sampling), a custom-built autosampler designed to collect air samples at remote locations. L.U.N.A. uses a CR3000 micrologger to control valves and a pump, as well as to interface with a pressure sensor. Samples are collected in 0.8 L SUMMA canisters, derivative-based fill termination. Logged data is stored in a CompactFlash card for later analysis.
 
 # Hardware
 ### Electrical
@@ -50,7 +50,7 @@ where $y$ is the pressure and $x$ is the output voltage. The output is read thro
 6) Finally, log final sample pressure and time
 
 ### write logged data to CF card
-- I think someone still needs to connect their computer to it to actually export the data though...
+- I think someone still needs to connect their computer to it to actually export the data though... sorry
 
 # Tests before fielding
 
