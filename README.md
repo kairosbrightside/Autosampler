@@ -1,42 +1,44 @@
 # Introduction
-This repository contains the code and documentation for L.U.N.A. (Laboratory/Low-cost Unit for Near-background Atmospheric/Autonomous Samples/Sampling), a custom-built autosampler designed to collect air samples at remote locations. L.U.N.A. uses a CR3000 micrologger to control valves and a pump, as well as to interface with a pressure sensor. Samples are collected in 0.8 L SUMMA canisters; LUNA uses derivative-based fill termination to determine when the pump has reached its limit. Logged data is stored in a CompactFlash card for later analysis.
+This repository contains the code and documentation for L.U.N.A. (Laboratory/Low-cost Unit for Near-background Autosampling), a custom-built autosampler designed to collect air samples at remote locations. L.U.N.A. uses a CR3000 micrologger to control valves and a pump, as well as to interface with a pressure sensor. Samples are collected in 0.8 L SUMMA canisters; LUNA uses derivative-based fill termination to determine when the pump has reached its limit. Logged data is stored in a CompactFlash card for later analysis.
 
 # Hardware
 ### Electrical
 - CR3000 micrologger (Campbell Scientific)
-- 8x electronically actuated valves (US Solid)
-- Pump (??? has no identifying markings but it runs on 12V so that's good enough!)
+- Pump (??? has no identifying markings but it runs on 12V!)
 - Digital pressure gauge (MCMaster Carr)
-- Songle relays (generic), using an 8-relay board for 7 valves + pump
+- Songle relays (generic), using an 8-relay board for 7 valves + pump and inlet valve
 - Terminal voltage board 8 x 2 (generic) for distributing 12V to pump and valves
-- 1/4' tubing to construct manifold. I am not sure how much I ended up using, sorry. If reproducing this setup for any reason, probably buy a couple feet 
+
 - Power supply for CR3000 (18V DC from 120V AC wall voltage adapter)
 ### Gas Flow
-- Drying system 
-    - magnesium perchlorate tube (homemade)
+-Magnesium perchlorate (Mg(ClO$_4$)$_2$) tube (homemade)
+- 8x electronically actuated valves (US Solid)
+    - 6x valves for samples
+    - 1x vent valve
+    - 1x inlet valve (to keep Mg(ClO$_4$)$_2$ dry)
 - 6x sample cans (0.8 L SUMMA)
 - 3x Swage cross
 - 1x Swage tee
-  
-### Optional 
-- CD74HC4067 multiplexing board since the CR3000 only has 8 digital pins
+- 1x bulkhead fitting for inlet
+- 1/4 in stainless steel tubing to construct manifold. I am not sure how much I ended up using, sorry
+- 1/4 in Synflex tubing 
 
-# Goals of the program
-### control pump and valves 
+# Purpose of the program
+### Control pump and valves 
 - Pump control: turn pump on and off
 - Valve control: open and close NC valves. The sampling valve and pump can activate at the same time, but the valve should close before the pump does. The valve I am currently using is a US Solid motorized ball valve that takes a couple seconds to open or close, so I will have to experiment with the timing there
 -  Purge the line for 5 minutes before opening the can
-- The pump and valves are using songle relays for activation. The sample valves are on C1-6, the purge valve is on C7, and the pump is on C8 of the CR3000
+- The pump and valves are using songle relays for activation. The sample valves are on C1-6, the purge valve is on C7, and the pump and inlet valve are on C8 of the CR3000
   
-### read pressure sensor
+### Read pressure sensor
 - The CR3000 is using a 1s scan rate
-- The pressure sensor covers a range of 0 to 145 psig. The recorded pressure is then converted to a voltage between 1 and 4 V, so a function should be created for pressure readout such that:
+- The pressure sensor covers a range of 0 to 145 psig. The recorded pressure is then converted to a voltage between 1 and 4 V, so a function is created for pressure readout such that:
   
 $$ y = \frac{145}{4}(x-1) $$
 
-where $y$ is the pressure and $x$ is the output voltage. The output is read through the campell's first analog channel.
+where $y$ is the pressure and $x$ is the output voltage. The output is read through the CR3000's first analog channel.
 
-- The DC+ should be connected to **brown** and DC- should be connected to **blue**!!
+**wiring note:** DC+ should be connected to **brown** and DC- should be connected to **blue**!!
 
 ### Stop samples at the limit of the pump
 - The program uses an exponential smoothing function to calculate when the pump has hit its limit. This is accomplished by calculating the exponentially smoothed derivative of the pressure, and then stopping when that derivative only deviates by values within the noise threshold of the sensor for several increments in a row.
@@ -53,7 +55,6 @@ where $y$ is the pressure and $x$ is the output voltage. The output is read thro
 - I think someone still needs to connect their computer to it to actually export the data though... sorry
 
 # Tests before fielding
-
 ### 9/15/25 Week-long leak test
 On Monday, 9/8, collected 3 samples of roof air 1h apart and held them for a week. On 9/15, removed the samples to measure them. 
 Cans 1 and 3, which were at 40.36 and 40.39 psig respectively, maintained their pressures when measured by an analog gauge, but can 2 went down to 31 psi for some reason.
