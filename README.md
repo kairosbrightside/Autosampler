@@ -11,7 +11,7 @@ This repository contains the code and documentation for L.U.N.A. (Laboratory/Low
 
 - Power supply for CR3000 (18V DC from 120V AC wall voltage adapter)
 ### Gas Flow
--Magnesium perchlorate (Mg(ClO$_4$)$_2$) tube (homemade)
+- Magnesium perchlorate (Mg(ClO$_4$)$_2$) tube (homemade)
 - 8x electronically actuated valves (US Solid)
     - 6x valves for samples
     - 1x vent valve
