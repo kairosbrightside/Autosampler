@@ -92,7 +92,7 @@ BeginProg
 
     ' Trigger at 10:30, 11:30, 12:30, only from WAIT state
     If (State = "WAIT") AND ((HourNow = 10) OR (HourNow = 11) OR (HourNow = 12)) AND (MinuteNow = 30) Then
-      CurrentCan = (CurrentCan MOD 3) + 1   ' cycle 1–3
+      CurrentCan = CurrentCan+1
       SampleID = SampleID + 1
       State = "FIRST_PURGE"
       T1 = 0
@@ -128,9 +128,15 @@ BeginProg
       PortSet(1, 0)
       PortSet(2, 0)
       PortSet(3, 0)
+      PortSet(4, 0)
+      PortSet(5, 0)
+      PortSet(6, 0)
       If CurrentCan = 1 Then PortSet(1, 1)
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
+      If CurrentCan = 4 Then PortSet(4, 1)
+      If CurrentCan = 5 Then PortSet(5, 1)
+      If CurrentCan = 6 Then PortSet(6, 1)
 
       Call UpdateDerivative(Pressure_psi, T1, 150)
 
@@ -155,9 +161,15 @@ BeginProg
       PortSet(1, 0)
       PortSet(2, 0)
       PortSet(3, 0)
+      PortSet(4, 0)
+      PortSet(5, 0)
+      PortSet(6, 0)
       If CurrentCan = 1 Then PortSet(1, 1)
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
+      If CurrentCan = 4 Then PortSet(4, 1)
+      If CurrentCan = 5 Then PortSet(5, 1)
+      If CurrentCan = 6 Then PortSet(6, 1)
 
       Call UpdateDerivative(Pressure_psi, T1, 150)
 
@@ -174,6 +186,10 @@ BeginProg
       PortSet(1, 0)
       PortSet(2, 0)
       PortSet(3, 0)
+      PortSet(4, 0)
+      PortSet(5, 0)
+      PortSet(6, 0)
+
       If T1 >= 10 Then
         PortSet(8, 0)  ' pump OFF
         State = "WAIT"
