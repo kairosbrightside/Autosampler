@@ -15,7 +15,7 @@ This repository contains the code and documentation for L.U.N.A. (Laboratory/Low
 - 8x electronically actuated valves (US Solid)
     - 6x valves for samples
     - 1x vent valve
-    - 1x inlet valve (to keep Mg(ClO$_4$)$_2$ dry)
+    - 1x inlet valve (to keep Mg(ClO $_4$ ) $_2$ dry)
 - 6x sample cans (0.8 L SUMMA)
 - 3x Swage cross
 - 1x Swage tee
