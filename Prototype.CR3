@@ -8,12 +8,12 @@ Public LogSampleNow As Boolean
 Public CurrentCan As Long
 Public PurgeCount As Long
 
-' Timekeeping
+' === Timekeeping ===
 Dim RT(9) As Long
 Public HourNow As Long
 Public MinuteNow As Long
 
-' === derivative-based stopping ===
+' === Derivative-based stopping ===
 Public PrevPressure As Float
 Public Deriv As Float
 Public DerivSm As Float
@@ -24,7 +24,10 @@ Const ALPHA = 0.3
 
 ' === Constants ===
 Const SCAN_INTERVAL_SECS = 1
-Const PURGE_DURATION = 300   ' 5 min purge
+Const PURGE_DURATION = 300   ' 5 min line purge
+Const VENT_DURATION = 10     ' 10 s vent
+Const FILL_TIMEOUT = 600     ' 10 min max fill
+Const MIN_DERIV_SCANS = 150  ' start checking derivative after 150 s
 
 ' === Data Table ===
 DataTable(SampleLog, True, -1)
@@ -49,7 +52,7 @@ Function VoltageToPSI(V As Float) As Float
   EndIf
 EndFunction
 
-' ===== Derivative subroutine with minimum scan delay =====
+' === Derivative subroutine ===
 Sub UpdateDerivative(Pressure As Float, ScanCount As Long, MinScans As Long)
   If ScanCount = 0 Then
     PrevPressure = Pressure
@@ -58,21 +61,22 @@ Sub UpdateDerivative(Pressure As Float, ScanCount As Long, MinScans As Long)
   ElseIf ScanCount >= MinScans Then
     Deriv = (Pressure - PrevPressure) / SCAN_INTERVAL_SECS
     DerivSm = (ALPHA * Deriv) + ((1 - ALPHA) * DerivSm)
-
     If ABS(DerivSm) <= DERIV_THRESH Then
       DerivStreak = DerivStreak + 1
     Else
       DerivStreak = 0
     EndIf
-
     PrevPressure = Pressure
   Else
     PrevPressure = Pressure
   EndIf
 EndSub
 
+' ============================================================
 ' === Main Program ===
+' ============================================================
 BeginProg
+  ' --- Initialize system ---
   State = "WAIT"
   T1 = 0
   PrevPressure = 0
@@ -83,6 +87,16 @@ BeginProg
   CurrentCan = 0
   PurgeCount = 0
 
+  ' --- Ensure all valves/pump are OFF on startup ---
+  PortSet(1, 0)
+  PortSet(2, 0)
+  PortSet(3, 0)
+  PortSet(4, 0)
+  PortSet(5, 0)
+  PortSet(6, 0)
+  PortSet(7, 0)   ' purge valve
+  PortSet(8, 0)   ' pump
+
   Scan(SCAN_INTERVAL_SECS, Sec, 0, 0)
 
     ' --- Clock ---
@@ -90,29 +104,40 @@ BeginProg
     HourNow = RT(4)
     MinuteNow = RT(5)
 
-    ' Trigger at 10:30, 11:30, 12:30, only from WAIT state
-    If (State = "WAIT") AND ((HourNow = 10) OR (HourNow = 11) OR (HourNow = 12)) AND (MinuteNow = 30) Then
-      CurrentCan = CurrentCan+1
-      SampleID = SampleID + 1
-      State = "FIRST_PURGE"
-      T1 = 0
-      PurgeCount = 0
-      DerivStreak = 0
+    ' ========================================================
+    ' === Daily Trigger ===
+    ' Take one sample per day at 12:00
+    ' ========================================================
+    If (State = "WAIT") AND (HourNow = 12) AND (MinuteNow = 00) Then
+      If CurrentCan < 6 Then
+        CurrentCan = CurrentCan + 1
+        SampleID = SampleID + 1
+        State = "FIRST_PURGE"
+        T1 = 0
+        PurgeCount = 0
+        DerivStreak = 0
+      Else
+        State = "DONE"   ' all 6 samples complete
+      EndIf
     EndIf
 
     ' --- Pressure ---
     VoltSe(V_Pressure, 1, mV5000, 1, 0, 0, 0, 1/1000, 0)
     Pressure_psi = VoltageToPSI(V_Pressure)
 
+    ' ========================================================
     ' === State Machine ===
+    ' ========================================================
     If State = "WAIT" Then
       ' Idle
 
+    ' -------------------
     ElseIf State = "FIRST_PURGE" Then
+      ' Purge line only
       PortSet(8, 1)  ' pump ON
-      PortSet(7, 1)  ' purge valve OPEN 
-      If T1 = PURGE_DURATION Then
-        PortSet(7, 0) ' purge valve OFF
+      PortSet(7, 1)  ' purge OPEN
+      If T1 >= PURGE_DURATION Then
+        PortSet(7, 0) ' purge CLOSED
         T1 = 0
         PurgeCount = 0
         DerivStreak = 0
@@ -120,17 +145,15 @@ BeginProg
       EndIf
       T1 = T1 + 1
 
+    ' -------------------
     ElseIf State = "CAN_PURGE" Then
+      ' Open can + fill until derivative flat → vent
       PortSet(8, 1)  ' pump ON
-      PortSet(7, 0)  ' purge valve OFF
+      PortSet(7, 0)  ' purge CLOSED
 
-      ' Reset all can valves, then open current one
-      PortSet(1, 0)
-      PortSet(2, 0)
-      PortSet(3, 0)
-      PortSet(4, 0)
-      PortSet(5, 0)
-      PortSet(6, 0)
+      ' Reset all cans, open current one
+      PortSet(1, 0): PortSet(2, 0): PortSet(3, 0)
+      PortSet(4, 0): PortSet(5, 0): PortSet(6, 0)
       If CurrentCan = 1 Then PortSet(1, 1)
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
@@ -138,32 +161,41 @@ BeginProg
       If CurrentCan = 5 Then PortSet(5, 1)
       If CurrentCan = 6 Then PortSet(6, 1)
 
-      Call UpdateDerivative(Pressure_psi, T1, 150)
+      Call UpdateDerivative(Pressure_psi, T1, MIN_DERIV_SCANS)
 
       If (DerivStreak >= DERIV_COUNT_REQ) Then
-        PortSet(7, 1)     ' vent ON
+        PortSet(7, 1)  ' vent ON
         PurgeCount = PurgeCount + 1
         T1 = 0
         DerivStreak = 0
-        If PurgeCount < 2 Then
-          State = "CAN_PURGE"   ' repeat purge again
-        Else
-          State = "SAMPLE"
-        EndIf
+        State = "VENT"
       EndIf
       T1 = T1 + 1
 
-    ElseIf State = "SAMPLE" Then
-      PortSet(8, 1)  ' pump ON
-      PortSet(7, 0)  ' purge closed
+    ' -------------------
+    ElseIf State = "VENT" Then
+      ' Venting between purge cycles
+      PortSet(7, 1)
+      If T1 >= VENT_DURATION Then
+        PortSet(7, 0)
+        If PurgeCount < 2 Then
+          State = "CAN_PURGE"
+        Else
+          State = "SAMPLE"
+        EndIf
+        T1 = 0
+      EndIf
+      T1 = T1 + 1
 
-      ' Reset all can valves, then open current one
-      PortSet(1, 0)
-      PortSet(2, 0)
-      PortSet(3, 0)
-      PortSet(4, 0)
-      PortSet(5, 0)
-      PortSet(6, 0)
+    ' -------------------
+    ElseIf State = "SAMPLE" Then
+      ' Final fill
+      PortSet(8, 1)
+      PortSet(7, 0)
+
+      ' Reset all can valves, open current one
+      PortSet(1, 0): PortSet(2, 0): PortSet(3, 0)
+      PortSet(4, 0): PortSet(5, 0): PortSet(6, 0)
       If CurrentCan = 1 Then PortSet(1, 1)
       If CurrentCan = 2 Then PortSet(2, 1)
       If CurrentCan = 3 Then PortSet(3, 1)
@@ -171,33 +203,38 @@ BeginProg
       If CurrentCan = 5 Then PortSet(5, 1)
       If CurrentCan = 6 Then PortSet(6, 1)
 
-      Call UpdateDerivative(Pressure_psi, T1, 150)
+      Call UpdateDerivative(Pressure_psi, T1, MIN_DERIV_SCANS)
 
-      If (DerivStreak >= DERIV_COUNT_REQ) OR (T1 > 600) Then
+      If (DerivStreak >= DERIV_COUNT_REQ) OR (T1 > FILL_TIMEOUT) Then
         LogSampleNow = True
         State = "SHUTDOWN"
         T1 = 0
       EndIf
       T1 = T1 + 1
 
+    ' -------------------
     ElseIf State = "SHUTDOWN" Then
-      ' close everything
+      ' Close everything
       PortSet(7, 0)
-      PortSet(1, 0)
-      PortSet(2, 0)
-      PortSet(3, 0)
-      PortSet(4, 0)
-      PortSet(5, 0)
-      PortSet(6, 0)
-
+      PortSet(1, 0): PortSet(2, 0): PortSet(3, 0)
+      PortSet(4, 0): PortSet(5, 0): PortSet(6, 0)
       If T1 >= 10 Then
         PortSet(8, 0)  ' pump OFF
         State = "WAIT"
       EndIf
       T1 = T1 + 1
+
+    ' -------------------
+    ElseIf State = "DONE" Then
+      ' All 6 cans sampled, remain idle
+      PortSet(1, 0): PortSet(2, 0): PortSet(3, 0)
+      PortSet(4, 0): PortSet(5, 0): PortSet(6, 0)
+      PortSet(7, 0): PortSet(8, 0)
     EndIf
 
+    ' ========================================================
     ' === Logging ===
+    ' ========================================================
     If LogSampleNow Then
       CallTable SampleLog
       CardFlush()
