@@ -74,3 +74,4 @@ Closing these valves resulted in an even faster leak rate of 0.1 psig/3 seconds,
 ```
 ### 10/15 Balcony Test!
 > 1:30 PM: Installation was delayed due to comm issues (broken cables). However, LUNA is finally on the balcony now! Set to take first sample at 2:30.
+> 2:30 PM: oops! forgot we were in 24-hour time. Set sample for 3:00 instead `<3`
