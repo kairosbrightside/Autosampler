@@ -76,3 +76,20 @@ Closing these valves resulted in an even faster leak rate of 0.1 psig/3 seconds,
 > 1:30 PM: Installation was delayed due to comm issues (broken cables). However, LUNA is finally on the balcony now! Set to take first sample at 2:30.
 
 > 2:30 PM: oops! forgot we were in 24-hour time. Set sample for 3:00 instead `<3`
+###### 10/22 pressure logs
+```
+"TOA5","CR3000","CR3000","3626","CR3000.Std.09","CPU:prototype.CR3","8857","SampleLog"
+"TIMESTAMP","RECORD","V_Pressure","Pressure_psi","State","SampleID","CurrentCan","HourNow","MinuteNow"
+"TS","RN","","","","","","",""
+"","","Smp","Smp","Smp","Smp","Smp","Smp","Smp"
+"2025-10-15 15:13:17",0,2.071,38.81,"SHUTDOWN",1,1,15,13
+"2025-10-16 15:13:17",1,1.846,30.68,"SHUTDOWN",2,2,15,13
+"2025-10-17 15:13:17",2,1.822,29.81,"SHUTDOWN",3,3,15,13
+"2025-10-18 15:13:17",3,1.803,29.12,"SHUTDOWN",4,4,15,13
+"2025-10-19 15:13:17",4,1.892,32.35,"SHUTDOWN",5,5,15,13
+"2025-10-20 15:13:17",5,1.923,33.47,"SHUTDOWN",6,6,15,13
+```
+It appears that the derivative stop parameters need to be adjusted. 
+
+> 10/22/25 1:20 PM: retrieved autosampler. Testing sample pressures now!
+
