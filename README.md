@@ -92,7 +92,8 @@ Closing these valves resulted in an even faster leak rate of 0.1 psig/3 seconds,
 It appears that the derivative stop parameters need to be adjusted. 
 
 > 10/22/25 1:20 PM: retrieved autosampler. Testing sample pressures now!
-| Sample | $P_{\rm recorded}$ | $P_{\rm measured} |
+> 
+| Sample | $P_{\rm recorded}$ | $P_{\rm measured}$|
 |1       | 38.81              | 35                |
 |2       | 30.68              | 30                |
 |3       | 29.81              | 28.5              |
