@@ -93,8 +93,8 @@ It appears that the derivative stop parameters need to be adjusted.
 
 > 10/22/25 1:20 PM: retrieved autosampler. Testing sample pressures now!
 
-| Sample | $ P_{\rm recorded} $| \( P_{\rm measured} $ |
-|:-------:|:-----------------:|:----------------------:|
+| Sample | $P_{\rm recorded} $| $P_{\rm measured} $ |
+|:-------:|:-----------------:|:-------------------:|
 | 1 | 38.81 | 35.0 |
 | 2 | 30.68 | 30.0 |
 | 3 | 29.81 | 28.5 |
