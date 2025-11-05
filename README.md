@@ -101,3 +101,5 @@ It appears that the derivative stop parameters need to be adjusted.
 | 4 | 29.12 | 27.8 |
 | 5 | 32.35 | 30.5 |
 | 6 | 33.47 | 29.9 |
+
+> Changed Mg(ClO$_4$)$_2$. Qualitatively, not much was consumed by the 6 samples, and the shielding appears to have worked!
