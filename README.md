@@ -8,6 +8,7 @@ This repository contains the code and documentation for L.U.N.A. (Laboratory/Low
 - Digital pressure gauge (MCMaster Carr)
 - Songle relays (generic), using an 8-relay board for 7 valves + pump and inlet valve
 - Terminal voltage board 8 x 2 (generic) for distributing 12V to pump and valves
+- RS232-USB connector for connecting laptop to export data and upload script (it is picky about cables though)
 
 - Power supply for CR3000 (18V DC from 120V AC wall voltage adapter)
 ### Gas Flow
