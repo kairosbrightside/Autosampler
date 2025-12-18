@@ -65,6 +65,7 @@ This compensates for pump wear, works even if leaks reduce maximum pressure, and
 
 ### Sampling Sequence
 For each canister:
+
 0) Waiting for sample trigger (`State = "WAIT"`)
   - Initializes sampling sequence when a specific time or trigger occurs
 1) Line purge (`State = "FIRST_PURGE"`)
