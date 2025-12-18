@@ -56,7 +56,7 @@ All relays are active-high (`PortSet = 1` $\to$ `ON`).
 | SE1     | Pressure transducer output (1–5 V) |
 
 Pressure conversion:
-$$P_{\rm psi} = \frav{145}{4}(V-1)$$
+$$P_{\rm psi} = \frac{145}{4}(V-1)$$
 
 ### Sampling Logic 
 
