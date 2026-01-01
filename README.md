@@ -9,8 +9,11 @@ This repository contains the code and documentation for L.U.N.A. (Laboratory/Low
 - Songle relays (generic), using an 8-relay board for 7 valves + pump and inlet valve
 - Terminal voltage board 8 x 2 (generic) for distributing 12V to pump and valves
 - RS232-USB connector for connecting laptop to export data and upload script (it is picky about cables though)
-
 - Power supply for CR3000 (18V DC from 120V AC wall voltage adapter)
+
+##### Schematic showing pin connections
+<img width="1999" height="1545" alt="image" src="https://github.com/user-attachments/assets/bd143747-5e39-48e2-be50-0a5362d96fea" />
+
 ### Gas Flow
 - Magnesium perchlorate ${\rm Mg(ClO}_4{\rm )}_2$ tube (homemade)
 - 8x electronically actuated valves (US Solid)
